@@ -1,3 +1,4 @@
+#pragma once
 #define TARGET_GAMEVERSION "Version 10.23.343.2792 [PUBLIC]" //
 
 #define oRetAddr 0x6E502 // // find addr : ret // opcode : C3
