@@ -58,7 +58,7 @@ public:
 	void draw_triangle(float_t x1, float_t y1, float_t x2, float_t y2, 
 		float_t x3, float_t y3, ImColor color = ImColor(255, 255, 255, 255), e_flags flags = triangle_normal, float_t thickness = 1.0f);
 
-	void draw_circle(float_t x, float_t y, float_t radius,
+	void draw_circle(Vector Position, float_t radius,
 		ImColor color = ImColor(255, 255, 255, 255), e_flags flags = circle_normal, uintptr_t points = 12, float_t thickness = 1.0f);
 
 public:

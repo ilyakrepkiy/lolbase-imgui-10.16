@@ -110,7 +110,7 @@ HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT* pSrcRect, CO
 
 			if (me->IsAlive()) {
 				auto color = createRGB(0, 255, 0);
-				Functions.DrawCircle(&me->GetPos(), me->GetAttackRange() + me->GetBoundingRadius(), &color, 0, 0.0f, 0, 0.5f);
+				render.draw_circle(me->GetPos(), me->GetAttackRange() + me->GetBoundingRadius(), color, c_renderer::circle_3d, 20, 1.0f);
 			}
 		}
 	}
@@ -143,7 +143,7 @@ HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT* pSrcRect, CO
 			if (obj->IsHero())
 			{ 
 				auto color = createRGB(255, 0, 0);
-				Functions.DrawCircle(&obj->GetPos(), obj->GetAttackRange() , &color, 0, 0.0f, 0, 0.5f);
+				render.draw_circle(obj->GetPos(), obj->GetAttackRange(), color, c_renderer::circle_3d, 20, 1.0f);
 			}
 			obj = holzer.GetNextObject(obj);
 		}
@@ -162,10 +162,8 @@ HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT* pSrcRect, CO
 				render.draw_text(objpos_w2s.X, objpos_w2s.Y + 15, obj->GetName(), true, ImColor(255, 0, 0, 255));
 				render.draw_text(objpos_w2s.X, objpos_w2s.Y + 30, obj->GetChampionName(), true, ImColor(255, 0, 0, 255));
 
-				//from float to char///////////////////////////
-				char Get_Health[10];						///					
-				sprintf(Get_Health, "%f", obj->GetHealth());///
-				///////////////////////////////////////////////
+				char Get_Health[10];				
+				sprintf(Get_Health, "%f", obj->GetHealth());
 
 				render.draw_text(objpos_w2s.X, objpos_w2s.Y + 45, Get_Health, true, ImColor(255, 0, 0, 255));
 
@@ -244,7 +242,6 @@ void __stdcall Start() {
 
 	//Functions.CastSpell = (Typedefs::fnCastSpell)((DWORD)GetModuleHandle(NULL) + oCastSpell);
 	Functions.IssueOrder = (Typedefs::fnIssueOrder)((DWORD)GetModuleHandle(NULL) + oIssueOrder);
-	Functions.DrawCircle = (Typedefs::fnDrawCircle)((DWORD)GetModuleHandle(NULL) + oDrawCircle);
 	Functions.WorldToScreen = (Typedefs::WorldToScreen)(baseAddr + (DWORD)oWorldToScreen);
 
 	Functions.GetAttackCastDelay = (Typedefs::fnGetAttackCastDelay)((DWORD)GetModuleHandle(NULL) + oGetAttackCastDelay);
@@ -334,7 +331,7 @@ LRESULT WINAPI WndProc(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param)
 	switch (u_msg)
 	{
 	case WM_KEYDOWN:
-		if (w_param == VK_END) /* твоя кнопка тут */
+		if (w_param == VK_END)
 			g_menu_opened = !g_menu_opened;
 		break;
 	default:
