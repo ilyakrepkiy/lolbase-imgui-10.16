@@ -1,6 +1,7 @@
 #include "CObject.h"
 #include <cmath>
 #include "ImRender.hpp"
+#include "Hooks.h"
 
 
 extern ImFont* g_font;
