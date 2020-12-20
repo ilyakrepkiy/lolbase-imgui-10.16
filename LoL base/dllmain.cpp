@@ -7,7 +7,6 @@
 #include "ImRender.hpp"
 #include <mutex>
 
-
 #include "imgui\imgui.h"
 #include "imgui\imgui_internal.h"
 #include "imgui\dx9\imgui_impl_dx9.h"
@@ -26,6 +25,9 @@ CFunctions Functions;
 HMODULE g_module = nullptr;
 HWND g_hwnd = nullptr;
 WNDPROC g_wndproc = nullptr;
+IDirect3DDevice9* myDevice;
+clock_t lastmove = NULL;
+
 bool g_menu_opened = false;
 bool g_range = false;
 bool g_unload = false;
@@ -34,15 +36,16 @@ bool g_champ_info = false;
 bool g_move_to_mouse = false;
 bool g_w2s_line = false;
 bool OnStartMessage = false;
-
 bool g_interface = false;
-IDirect3DDevice9* myDevice;
-clock_t lastmove = NULL;
-using namespace std;
+
+
+LRESULT WINAPI WndProc(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param);
+
 typedef HRESULT(WINAPI* Prototype_Present)(LPDIRECT3DDEVICE9, CONST RECT*, CONST RECT*, HWND, CONST RGNDATA*);
+typedef HRESULT(WINAPI* Prototype_Reset)(LPDIRECT3DDEVICE9, D3DPRESENT_PARAMETERS*);
+Prototype_Reset Original_Reset;
 Prototype_Present Original_Present;
 
-	
 HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT* pSrcRect, CONST RECT* pDestRect, HWND hDestWindow, CONST RGNDATA* pDirtyRegion)
 {
 	myDevice = Device;
@@ -53,31 +56,6 @@ HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT* pSrcRect, CO
 
 		ImGui::CreateContext();											
 		render.begin_draw();//begin for draw rende.drawline.... and etc
-
-
-
-
-	///////////////////////////////////////////////
-	///				\\	Print Chat	//			///	
-	//from float to char///////////////////////////
-	char Get_Healthe[10];						///					
-	sprintf(Get_Healthe, "%f", me->GetHealth());///
-	////////////////////////////////////////////////////////////////////
-																	////
-	if (OnStartMessage == true) {									//// need fix ofset for print chat
-		Engine::PrintChat("///////  Kmsmym update lolbase");		////
-		Engine::PrintChat("///////  Unknowncheats.me");				////	
-		Engine::PrintChat("///////  My health");					////
-		Engine::PrintChat("///////////////////////////////	 ");	////
-		Engine::PrintChat(Get_Healthe);								////
-		Engine::PrintChat("///////////////////////////////	 ");	////
-		OnStartMessage = true;										////
-	}																////
-	////////////////////////////////////////////////////////////////////
-
-
-
-
 
 	if (ImGui_ImplWin32_Init(g_hwnd))
 	{
@@ -102,20 +80,16 @@ HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT* pSrcRect, CO
 		}
 	}
 
-	//Below are just examples, for ease of understanding, some are placed in a separate cycle. Do not repeat this. Do one cycle to get objects.
-
-	//Me Range
 	if (g_range == true) {
 		if (me) {
 
 			if (me->IsAlive()) {
-				auto color = createRGB(0, 255, 0);
-				render.draw_circle(me->GetPos(), me->GetAttackRange() + me->GetBoundingRadius(), color, c_renderer::circle_3d, 20, 1.0f);
+				auto color = ImColor(0, 255, 0);
+				render.draw_circle(me->GetPos(), me->GetAttackRange() + me->GetBoundingRadius(), color, c_renderer::circle_3d, 20, 3.0f);
 			}
 		}
 	}
 
-	//line to mouse
 	if (g_w2s_line == true) {
 		Vector me_pos = me->GetPos();
 		Vector mepos_w2s;
@@ -126,15 +100,13 @@ HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT* pSrcRect, CO
 		render.draw_line(mepos_w2s.X, mepos_w2s.Y, mouse_pos_w2s.X, mouse_pos_w2s.Y, ImColor(15, 150, 40, 255), 5.0f);
 	}
 
-	//move to mouse
 	if (g_move_to_mouse == true) {
 		if (lastmove == NULL || clock() - lastmove > 30.0f) {
 			lastmove = clock();
-			Engine::MoveTo(&Engine::GetMouseWorldPosition());
+			Engine::IssueMove(&Engine::GetMouseWorldPosition());
 		}
 	}
 
-	//draw range all hero using getfirst/getnext obj
 	if (g_2range_objmanager == true) {
 		CObject holzer;
 		auto obj = holzer.GetFirstObject();
@@ -148,7 +120,7 @@ HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT* pSrcRect, CO
 			obj = holzer.GetNextObject(obj);
 		}
 	}
-	//champion info demonstration
+
 	if (g_champ_info == true) {
 		CObject holzer;
 		auto obj = holzer.GetFirstObject();
@@ -172,14 +144,9 @@ HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT* pSrcRect, CO
 		}
 	}
 
-
-
-	render.end_draw();//end for draw render.drawline.... and etc
+	render.end_draw();
 	return Original_Present(Device, pSrcRect, pDestRect, hDestWindow, pDirtyRegion);
 }
-
-typedef HRESULT(WINAPI* Prototype_Reset)(LPDIRECT3DDEVICE9, D3DPRESENT_PARAMETERS*);
-Prototype_Reset Original_Reset;
 
 HRESULT WINAPI Hooked_Reset(LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentationParameters)
 {
@@ -217,8 +184,6 @@ DWORD GetDeviceAddress(int VTableIndex)
 	return VTable[VTableIndex];
 }
 
-LRESULT WINAPI WndProc(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param);
-typedef long(__stdcall* tEndScene)(LPDIRECT3DDEVICE9);
 void __stdcall Start() {
 	while (Engine::GetGameTime() < 1.0f || !me)
 		Sleep(1);
@@ -240,7 +205,6 @@ void __stdcall Start() {
 	Functions.IsInhibitor = (Typedefs::fnIsInhibitor)(baseAddr + oIsInhib);
 	Functions.IsTroyEnt = (Typedefs::fnIsTroyEnt)(baseAddr + oIsTroy);
 
-	//Functions.CastSpell = (Typedefs::fnCastSpell)((DWORD)GetModuleHandle(NULL) + oCastSpell);
 	Functions.IssueOrder = (Typedefs::fnIssueOrder)((DWORD)GetModuleHandle(NULL) + oIssueOrder);
 	Functions.WorldToScreen = (Typedefs::WorldToScreen)(baseAddr + (DWORD)oWorldToScreen);
 
@@ -251,8 +215,7 @@ void __stdcall Start() {
 	Original_Reset = (Prototype_Reset)DetourFunction((PBYTE)GetDeviceAddress(16), (PBYTE)Hooked_Reset);
 
 	while (!g_unload)
-		Sleep(1000);
-		//std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		Sleep(1);
 
 	ImGui_ImplWin32_Shutdown();
 	ImGui_ImplDX9_Shutdown();
@@ -344,10 +307,7 @@ LRESULT WINAPI WndProc(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param)
 	return CallWindowProcA(g_wndproc, hwnd, u_msg, w_param, l_param);
 }
 
-BOOL APIENTRY DllMain(HMODULE hModule,
-	DWORD  ul_reason_for_call,
-	LPVOID lpReserved
-)
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
 {
 	if (hModule != nullptr)
 		DisableThreadLibraryCalls(hModule);

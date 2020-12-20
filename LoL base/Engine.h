@@ -48,16 +48,54 @@ public:
 		}
 	}
 
-	static void MoveTo(Vector* pos) {
-		Functions.IssueOrder(GetLocalObject(), 2, pos, NULL, false, false, false);
+	static void AttackTo(Vector* pos, CObject* Target)
+	{
+		DWORD SpoofAddress = (DWORD)GetModuleHandle(NULL) + oRetAddr; //retn instruction
+		DWORD IssueOrderAddr = (DWORD)GetModuleHandle(NULL) + oIssueOrder;//IssueOrder
+		void* LocalPlayer = Engine::GetLocalObject();
+		CObject* AttackTo = Target;
 
+		__asm
+		{
+			push retnHere
+			mov ecx, LocalPlayer
+			push 0
+			push 0
+			push 0
+			push AttackTo
+			push pos
+			push 3
+			push SpoofAddress
+			jmp IssueOrderAddr
+			sub retnHere, 22
+			retnHere :
+		}
 	}
-		
 
 
-	static void AttackTarget(CObject* obj) {
-		Functions.IssueOrder(GetLocalObject(), 3, &obj->GetPos(), obj, true, false, false);
+	static void IssueMove(Vector* pos)
+	{
+		DWORD SpoofAddress = (DWORD)GetModuleHandle(NULL) + oRetAddr; //retn instruction
+		DWORD IssueOrderAddr = (DWORD)GetModuleHandle(NULL) + oIssueOrder;//IssueOrder
+		void* LocalPlayer = Engine::GetLocalObject();
+
+		__asm
+		{
+			push retnHere
+			mov ecx, LocalPlayer
+			push 0
+			push 0
+			push 0
+			push 0
+			push pos
+			push 2
+			push SpoofAddress
+			jmp IssueOrderAddr
+			sub retnHere, 22
+			retnHere :
+		}
 	}
+
 
 
 	static void Engine::CastSpellSelf(int SlotID) {

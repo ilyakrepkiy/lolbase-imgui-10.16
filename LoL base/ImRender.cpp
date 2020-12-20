@@ -5,13 +5,6 @@
 
 extern ImFont* g_font;
 
-
-
-
-
-
-
-
 c_renderer render;
 
 
@@ -30,9 +23,6 @@ void c_renderer::init(LPDIRECT3DDEVICE9 device)
 
 	if (!m_default)
 		m_default = ImGui::GetIO().Fonts->AddFontDefault();
-	/* ImGui::GetIO().Fonts->AddFontFromFileTTF("path_to_font", 14.0f, nullptr, ImGui::GetIO().Fonts->GetGlyphRangesCyrillic()); */
-
-	
 
 }
 
@@ -161,13 +151,17 @@ void c_renderer::draw_circle(Vector Position, float_t radius, ImColor color, e_f
 		static const float DELTA_THETA = 2 * PI / points;
 
 		Vector first_point = Position + Vector(radius, 0, 0);
-
+		
 		for (float i = 1; i <= points; ++i)
 		{
 			Vector orientation = Vector(std::cos(DELTA_THETA * i), 0, std::sin(DELTA_THETA * i));
 			Vector next_point = Position + (orientation * radius);
+			Vector first_point_w2s, next_point_w2s;
 
-			this->draw_line(first_point.X, first_point.Y, next_point.X, next_point.Y, color, thickness);
+			Functions.WorldToScreen(&first_point, &first_point_w2s);
+			Functions.WorldToScreen(&next_point, &next_point_w2s);
+
+			this->draw_line(first_point_w2s.X, first_point_w2s.Y, next_point_w2s.X, next_point_w2s.Y, color, thickness);
 
 			first_point = next_point;
 		}
