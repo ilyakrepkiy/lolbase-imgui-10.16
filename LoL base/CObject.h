@@ -42,6 +42,14 @@ public:
 	bool IsInhibitor();
 	bool IsTroyEnt();
 
+	Vector GetMissileStartPos();
+
+	Vector GetMissileEndPos();
+
+	short GetMissileSourceIndex();
+
+	SpellInfo GetMissileSpellInfo();
+
 	bool IsTargetable();
 	bool CObject::CompareObjectTypeFlags(ObjectTypeFlags objectTypeFlag)
 	{

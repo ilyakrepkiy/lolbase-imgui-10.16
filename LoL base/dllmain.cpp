@@ -37,8 +37,8 @@ bool g_2range_objmanager = false;
 bool g_champ_info = false;
 bool g_move_to_mouse = false;
 bool g_w2s_line = false;
-bool OnStartMessage = false;
 bool g_interface = false;
+bool g_draw_spells = true;
 
 IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT WINAPI WndProc(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param);
@@ -59,34 +59,49 @@ HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT* pSrcRect, CO
 		ImGui::CreateContext();											
 		render.begin_draw();//begin for draw rende.drawline.... and etc
 
-	if (ImGui_ImplWin32_Init(g_hwnd))
+	if (g_menu_opened)
 	{
-		if (ImGui_ImplDX9_Init(Device))
+		ImGui::Begin("dencelle::unknowncheats.me", &g_menu_opened, ImGuiWindowFlags_NoSavedSettings);
 		{
-			if (g_menu_opened)
+			ImGui::BeginChild("##child", ImVec2(450.0f, 450.0f), false, ImGuiWindowFlags_NoSavedSettings);
 			{
-				ImGui::Begin("kmsmym::unknowncheats.me", &g_menu_opened, ImGuiWindowFlags_NoSavedSettings);
-				{
-					ImGui::BeginChild("##child", ImVec2(450.0f, 450.0f), false, ImGuiWindowFlags_NoSavedSettings);
-					{
-						ImGui::Checkbox("My range demostration", &g_range);
-						ImGui::Checkbox("All hero range demostration", &g_2range_objmanager);
-						ImGui::Checkbox("Move to mouse demostration", &g_move_to_mouse);
-						ImGui::Checkbox("W2S/Line demostration", &g_w2s_line);
-						ImGui::Checkbox("Text champ info demostration", &g_champ_info);
+				ImGui::Checkbox("My range demostration", &g_range);
+				ImGui::Checkbox("All hero range demostration", &g_2range_objmanager);
+				ImGui::Checkbox("Move to mouse demostration", &g_move_to_mouse);
+				ImGui::Checkbox("W2S/Line demostration", &g_w2s_line);
+				ImGui::Checkbox("Text champ info demostration", &g_champ_info);
 
-						ImGui::Checkbox("Orbwalker: Last Hit", &orbWalker.lastHitOnly);
-					}
-					ImGui::EndChild();
-				}
-				ImGui::End();
+				ImGui::Checkbox("Orbwalker: Last Hit", &orbWalker.lastHitOnly);
+				
+				ImGui::Checkbox("Show Spells", &g_draw_spells);
 			}
+			ImGui::EndChild();
 		}
+		ImGui::End();
 	}
 
 	if (me && me->IsAlive()) {
 		if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
 			orbWalker.drawEvent();
+		}
+	}
+
+	if (g_draw_spells == true) {
+		CObject holzer;
+		auto obj = holzer.GetFirstObject();
+		while (obj)
+		{
+			if (obj && obj->IsMissile())
+			{
+				auto objCaster = Engine::GetObjectByID(obj->GetMissileSourceIndex());
+				if (objCaster->IsHero() && me->IsEnemyTo(objCaster) && !stristr(obj->GetName(), "basic")) {
+					Vector start_pos_w2s, end_pos_w2s;
+					Functions.WorldToScreen(&obj->GetMissileStartPos(), &start_pos_w2s);
+					Functions.WorldToScreen(&obj->GetMissileEndPos(), &end_pos_w2s);
+					render.draw_line(start_pos_w2s.X, start_pos_w2s.Y, end_pos_w2s.X, end_pos_w2s.Y, ImColor(255, 255, 255), 5);
+				}
+			}
+			obj = holzer.GetNextObject(obj);
 		}
 	}
 

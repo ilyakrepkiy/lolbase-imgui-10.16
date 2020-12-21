@@ -102,6 +102,7 @@
      
     //MissileInfo
     #define oMissileSpellInfo 0x230
+    #define oMissileSourceIndex 0x290
     #define oMissileTargetIndex 0x2E8
     #define oMissileStartPos 0x2A8
     #define oMissileEndPos 0x2B4
