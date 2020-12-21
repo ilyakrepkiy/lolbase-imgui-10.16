@@ -10,6 +10,10 @@ bool CObject::IsMinion() {
 	return Functions.IsMinion(this);
 }
 
+float CObject::GetDistanceToMe() {
+	return this->GetPos().DistTo(Engine::GetLocalObject()->GetPos());
+}
+
 bool CObject::IsTurret() {
 	return Functions.IsTurret(this);
 }
@@ -24,6 +28,16 @@ bool CObject::IsMissile() {
 
 bool CObject::IsTargetable() {
 	return Functions.IsTargetable(this);
+}
+
+float CObject::GetAttackDelay()
+{
+	return Functions.GetAttackDelay(this);
+}
+
+float CObject::GetAttackCastDelay()
+{
+	return Functions.GetAttackCastDelay(this);
 }
 
 bool CObject::IsNexus() {

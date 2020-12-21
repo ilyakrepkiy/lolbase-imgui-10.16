@@ -153,6 +153,7 @@
   <ItemGroup>
     <ClInclude Include="CObject.h" />
     <ClInclude Include="CObjectManager.h" />
+    <ClInclude Include="COrbWalker.h" />
     <ClInclude Include="CSpellBook.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="ESpellSlot.h" />
@@ -177,6 +178,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CObject.cpp" />
+    <ClCompile Include="COrbWalker.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

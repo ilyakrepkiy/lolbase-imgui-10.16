@@ -38,3 +38,10 @@ inline int createRGB(int r, int g, int b)
 {
 	return ((r & 0xff) << 16) + ((g & 0xff) << 8) + (b & 0xff);
 }
+
+inline float calculate2dDistance(float x1, float y1, float x2, float y2)
+{
+	float diffY = y1 - y2;
+	float diffX = x1 - x2;
+	return sqrtf((diffY * diffY) + (diffX * diffX));
+}

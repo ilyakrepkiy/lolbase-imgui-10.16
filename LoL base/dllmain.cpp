@@ -5,6 +5,7 @@
 #include "Hooks.h"
 #include "detours.h"
 #include "ImRender.hpp"
+#include "COrbWalker.h"
 #include <mutex>
 
 #include "imgui\imgui.h"
@@ -21,6 +22,7 @@ using namespace std;
 
 CObjectManager* ObjManager;
 CFunctions Functions;
+COrbWalker orbWalker;
 
 HMODULE g_module = nullptr;
 HWND g_hwnd = nullptr;
@@ -77,6 +79,12 @@ HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT* pSrcRect, CO
 				}
 				ImGui::End();
 			}
+		}
+	}
+
+	if (me && me->IsAlive()) {
+		if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
+			orbWalker.drawEvent();
 		}
 	}
 

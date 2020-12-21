@@ -25,7 +25,13 @@ enum class ObjectTypeFlags {
 
 class CObject {
 public:
-
+	float CObject::GetEffectiveDamageOnTarget(CObject* target) {
+		return this->GetTotalAttackDamage() * (100 / (100 + target->GetArmor()));
+	}
+	bool CObject::IsInvalidObject() {
+		return CompareObjectTypeFlags((int)ObjectTypeFlags::InvalidObject);
+	}
+	float CObject::GetDistanceToMe();
 	bool IsTurret();
 	bool IsMinion();
 	bool IsAlive();
@@ -158,9 +164,17 @@ public:
 
 		return false;
 	}
+
+	bool Isjungle() {
+
+		if (this->GetTeam() == 300)
+			return true;
+		return false;
+	}
+
 	bool Isjungle(CObject* Obj) {
 
-		if (Obj->GetTeam() == 300 && this->GetTeam() == 100)
+		if (Obj->GetTeam() == 300)
 			return true;
 		return false;
 	}

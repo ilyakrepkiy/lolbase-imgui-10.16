@@ -3,11 +3,9 @@
 #include "ImRender.hpp"
 #include "Hooks.h"
 
-
 extern ImFont* g_font;
 
 c_renderer render;
-
 
 void c_renderer::init(LPDIRECT3DDEVICE9 device)
 {
