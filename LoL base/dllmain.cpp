@@ -30,8 +30,8 @@ WNDPROC g_wndproc = nullptr;
 IDirect3DDevice9* myDevice;
 clock_t lastmove = NULL;
 
-bool g_menu_opened = false;
-bool g_range = false;
+bool g_menu_opened = true;
+bool g_range = true;
 bool g_unload = false;
 bool g_2range_objmanager = false;
 bool g_champ_info = false;
@@ -40,7 +40,7 @@ bool g_w2s_line = false;
 bool OnStartMessage = false;
 bool g_interface = false;
 
-
+IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT WINAPI WndProc(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param);
 
 typedef HRESULT(WINAPI* Prototype_Present)(LPDIRECT3DDEVICE9, CONST RECT*, CONST RECT*, HWND, CONST RGNDATA*);
@@ -74,6 +74,8 @@ HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT* pSrcRect, CO
 						ImGui::Checkbox("Move to mouse demostration", &g_move_to_mouse);
 						ImGui::Checkbox("W2S/Line demostration", &g_w2s_line);
 						ImGui::Checkbox("Text champ info demostration", &g_champ_info);
+
+						ImGui::Checkbox("Orbwalker: Last Hit", &orbWalker.lastHitOnly);
 					}
 					ImGui::EndChild();
 				}
@@ -228,73 +230,13 @@ void __stdcall Start() {
 	ImGui_ImplWin32_Shutdown();
 	ImGui_ImplDX9_Shutdown();
 
+	g_wndproc = WNDPROC(SetWindowLongA(g_hwnd, GWL_WNDPROC, LONG_PTR(g_wndproc)));
+	DetourRemove((PBYTE)Original_Reset, (PBYTE)Hooked_Reset);
+	DetourRemove((PBYTE)Original_Present, (PBYTE)Hooked_Present);
+
 	ImGui::DestroyContext(ImGui::GetCurrentContext());
 
 	FreeLibraryAndExitThread(g_module, 0);
-}
-
-LRESULT ImGui_ImplDX9_WndProcHandler(HWND, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	auto& io = ImGui::GetIO();
-
-	switch (msg)
-	{
-	case WM_LBUTTONDOWN:
-	case WM_LBUTTONDBLCLK:
-		io.MouseDown[0] = true;
-		return true;
-	case WM_LBUTTONUP:
-		io.MouseDown[0] = false;
-		return true;
-	case WM_RBUTTONDOWN:
-	case WM_RBUTTONDBLCLK:
-		io.MouseDown[1] = true;
-		return true;
-	case WM_RBUTTONUP:
-		io.MouseDown[1] = false;
-		return true;
-	case WM_MBUTTONDOWN:
-	case WM_MBUTTONDBLCLK:
-		io.MouseDown[2] = true;
-		return true;
-	case WM_MBUTTONUP:
-		io.MouseDown[2] = false;
-		return true;
-	case WM_XBUTTONDOWN:
-	case WM_XBUTTONDBLCLK:
-		if ((GET_KEYSTATE_WPARAM(wParam) & MK_XBUTTON1) == MK_XBUTTON1)
-			io.MouseDown[3] = true;
-		else if ((GET_KEYSTATE_WPARAM(wParam) & MK_XBUTTON2) == MK_XBUTTON2)
-			io.MouseDown[4] = true;
-		return true;
-	case WM_XBUTTONUP:
-		if ((GET_KEYSTATE_WPARAM(wParam) & MK_XBUTTON1) == MK_XBUTTON1)
-			io.MouseDown[3] = false;
-		else if ((GET_KEYSTATE_WPARAM(wParam) & MK_XBUTTON2) == MK_XBUTTON2)
-			io.MouseDown[4] = false;
-		return true;
-	case WM_MOUSEWHEEL:
-		io.MouseWheel += GET_WHEEL_DELTA_WPARAM(wParam) > 0 ? +1.0f : -1.0f;
-		return true;
-	case WM_MOUSEMOVE:
-		io.MousePos.x = (signed short)(lParam);
-		io.MousePos.y = (signed short)(lParam >> 16);
-		return true;
-	case WM_KEYDOWN:
-		if (wParam < 256)
-			io.KeysDown[wParam] = 1;
-		return true;
-	case WM_KEYUP:
-		if (wParam < 256)
-			io.KeysDown[wParam] = 0;
-		return true;
-	case WM_CHAR:
-		if (wParam > 0 && wParam < 0x10000)
-			io.AddInputCharacter((unsigned short)wParam);
-		return true;
-	}
-
-	return 0;
 }
 
 LRESULT WINAPI WndProc(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param)
@@ -309,7 +251,7 @@ LRESULT WINAPI WndProc(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param)
 		break;
 	}
 
-	if (g_menu_opened && ImGui_ImplDX9_WndProcHandler(hwnd, u_msg, w_param, l_param))
+	if (g_menu_opened && ImGui_ImplWin32_WndProcHandler(hwnd, u_msg, w_param, l_param))
 		return true;
 
 	return CallWindowProcA(g_wndproc, hwnd, u_msg, w_param, l_param);

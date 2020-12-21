@@ -7,7 +7,7 @@ bool CObject::IsAlive() {
 }
 
 bool CObject::IsMinion() {
-	return Functions.IsMinion(this);
+	return this->CompareObjectTypeFlags(ObjectTypeFlags::Minion);
 }
 
 float CObject::GetDistanceToMe() {
@@ -15,19 +15,19 @@ float CObject::GetDistanceToMe() {
 }
 
 bool CObject::IsTurret() {
-	return Functions.IsTurret(this);
+	return this->CompareObjectTypeFlags(ObjectTypeFlags::Turret);
 }
 
 bool CObject::IsHero() {
-	return CompareObjectTypeFlags((int)ObjectTypeFlags::Hero);
+	return CompareObjectTypeFlags(ObjectTypeFlags::Hero);
 }
 
 bool CObject::IsMissile() {
-	return Functions.IsMissile(this);
+	return this->CompareObjectTypeFlags(ObjectTypeFlags::Missile);
 }
 
 bool CObject::IsTargetable() {
-	return Functions.IsTargetable(this);
+	return this->CompareObjectTypeFlags(ObjectTypeFlags::AttackableUnit);
 }
 
 float CObject::GetAttackDelay()

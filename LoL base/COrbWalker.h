@@ -11,7 +11,6 @@ private:
 	int m_nLastAttackCmdTick;
 	int m_nLastMoveCmdTick;
 	std::chrono::milliseconds m_lastMoveClickTime;
-	bool lastHitOnly;
 	bool autoMove;
 	bool preferHarassOverFarm;
 
@@ -20,6 +19,7 @@ private:
 	std::vector<CObject*> GetObjects();
 
 public:
+	bool lastHitOnly;
 	COrbWalker::COrbWalker() : m_pTarget(nullptr), m_nLastAttackCmdTick(0), m_nLastMoveCmdTick(0), m_lastMoveClickTime(0),
 		lastHitOnly(false), autoMove(true), preferHarassOverFarm(true)
 	{
