@@ -48,36 +48,40 @@ typedef HRESULT(WINAPI* Prototype_Reset)(LPDIRECT3DDEVICE9, D3DPRESENT_PARAMETER
 Prototype_Reset Original_Reset;
 Prototype_Present Original_Present;
 
-HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT* pSrcRect, CONST RECT* pDestRect, HWND hDestWindow, CONST RGNDATA* pDirtyRegion)
+HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT * pSrcRect, CONST RECT * pDestRect, HWND hDestWindow, CONST RGNDATA * pDirtyRegion)
 {
 	myDevice = Device;
-		DO_ONCE([&]()
-	{
-		render.init(Device);
-	});
-
-		ImGui::CreateContext();											
-		render.begin_draw();//begin for draw rende.drawline.... and etc
-
-	if (g_menu_opened)
-	{
-		ImGui::Begin("dencelle::unknowncheats.me", &g_menu_opened, ImGuiWindowFlags_NoSavedSettings);
+	DO_ONCE([&]()
 		{
-			ImGui::BeginChild("##child", ImVec2(450.0f, 450.0f), false, ImGuiWindowFlags_NoSavedSettings);
-			{
-				ImGui::Checkbox("My range demostration", &g_range);
-				ImGui::Checkbox("All hero range demostration", &g_2range_objmanager);
-				ImGui::Checkbox("Move to mouse demostration", &g_move_to_mouse);
-				ImGui::Checkbox("W2S/Line demostration", &g_w2s_line);
-				ImGui::Checkbox("Text champ info demostration", &g_champ_info);
+			render.init(Device);
+		});
 
-				ImGui::Checkbox("Orbwalker: Last Hit", &orbWalker.lastHitOnly);
-				
-				ImGui::Checkbox("Show Spells", &g_draw_spells);
+	ImGui::CreateContext();
+	render.begin_draw();//begin for draw rende.drawline.... and etc
+
+	if (ImGui_ImplWin32_Init(g_hwnd)){
+		if (ImGui_ImplDX9_Init(Device)){
+			if (g_menu_opened)
+			{
+				ImGui::Begin("dencelle::unknowncheats.me", &g_menu_opened, ImGuiWindowFlags_NoSavedSettings);
+				{
+					ImGui::BeginChild("##child", ImVec2(450.0f, 450.0f), false, ImGuiWindowFlags_NoSavedSettings);
+					{
+						ImGui::Checkbox("My range demostration", &g_range);
+						ImGui::Checkbox("All hero range demostration", &g_2range_objmanager);
+						ImGui::Checkbox("Move to mouse demostration", &g_move_to_mouse);
+						ImGui::Checkbox("W2S/Line demostration", &g_w2s_line);
+						ImGui::Checkbox("Text champ info demostration", &g_champ_info);
+
+						ImGui::Checkbox("Orbwalker: Last Hit", &orbWalker.lastHitOnly);
+
+						ImGui::Checkbox("Show Spells", &g_draw_spells);
+					}
+					ImGui::EndChild();
+				}
+				ImGui::End();
 			}
-			ImGui::EndChild();
 		}
-		ImGui::End();
 	}
 
 	if (me && me->IsAlive()) {
