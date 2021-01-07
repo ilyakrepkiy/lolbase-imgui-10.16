@@ -222,7 +222,6 @@ void __stdcall Start() {
 
 	ObjManager = (CObjectManager*)(*(DWORD*)(baseAddr + oObjManager));
 
-	Functions.PrintChat = (Typedefs::fnPrintChat)(baseAddr + oPrintChat);
 	Functions.IsTargetable = (Typedefs::fnIsTargetable)(baseAddr + oIsTargetable);
 	Functions.IsAlive = (Typedefs::fnIsAlive)(baseAddr + oIsAlive);
 

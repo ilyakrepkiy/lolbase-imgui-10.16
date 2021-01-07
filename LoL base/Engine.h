@@ -36,11 +36,6 @@ public:
 
 		return (CObject*)retaddr;
 	}
-	static void PrintChat(const char* Message) {
-		typedef void(__thiscall* tPrintChat)(DWORD ChatClient, const char* Message, int Color);
-		tPrintChat fnPrintChat = (tPrintChat)(baseAddr + oPrintChat);
-		fnPrintChat(*(DWORD*)(baseAddr + oChatClientPtr), Message, 1);
-	}
 	static CObject* Engine::GetObjectByID(int ID)
 	{
 		if (ObjManager && ID >= 0 && ID <= ObjManager->GetHighestIndex()) {
