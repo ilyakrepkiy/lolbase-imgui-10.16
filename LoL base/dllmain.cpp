@@ -45,6 +45,8 @@ LRESULT WINAPI WndProc(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param);
 
 typedef HRESULT(WINAPI* Prototype_Present)(LPDIRECT3DDEVICE9, CONST RECT*, CONST RECT*, HWND, CONST RGNDATA*);
 typedef HRESULT(WINAPI* Prototype_Reset)(LPDIRECT3DDEVICE9, D3DPRESENT_PARAMETERS*);
+typedef int(__thiscall* fnCheckReturnAddr)(int a1, int a2, int a3, DWORD* a4, char a5, int a6, int a7, int a8, int a9, DWORD* returnaddr);
+fnCheckReturnAddr CheckReturnAddr;
 Prototype_Reset Original_Reset;
 Prototype_Present Original_Present;
 
@@ -189,6 +191,11 @@ HRESULT WINAPI Hooked_Reset(LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pP
 	return result;
 }
 
+int __fastcall CheckReturnAddr_Hook(int a1, int a2, int a3, DWORD* a4, char a5, int a6, int a7, int a8, int a9, DWORD* returnaddr) {
+	returnaddr = (DWORD*)oRetAddr;
+	return CheckReturnAddr(a1, a2, a3, a4, a5, a6, a7, a8, a9, returnaddr);
+}
+
 DWORD FindDevice(DWORD Len)
 {
 	DWORD dwObjBase = 0;
@@ -241,6 +248,7 @@ void __stdcall Start() {
 
 	Original_Present = (Prototype_Present)DetourFunction((PBYTE)GetDeviceAddress(17), (PBYTE)Hooked_Present);
 	Original_Reset = (Prototype_Reset)DetourFunction((PBYTE)GetDeviceAddress(16), (PBYTE)Hooked_Reset);
+	CheckReturnAddr = (fnCheckReturnAddr)DetourFunction((PBYTE)baseAddr+oReturnAddressCheck, (PBYTE)CheckReturnAddr_Hook);
 
 	while (!g_unload)
 		Sleep(1);
