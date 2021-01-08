@@ -157,8 +157,8 @@ void c_renderer::draw_circle(Vector Position, float_t radius, ImColor color, e_f
 			Vector next_point = Position + (orientation * radius);
 			Vector first_point_w2s, next_point_w2s;
 
-			Functions.WorldToScreen(&first_point, &first_point_w2s);
-			Functions.WorldToScreen(&next_point, &next_point_w2s);
+			Functions.WorldToScreen(m_device, &first_point, &first_point_w2s);
+			Functions.WorldToScreen(m_device, &next_point, &next_point_w2s);
 
 			this->draw_line(first_point_w2s.X, first_point_w2s.Y, next_point_w2s.X, next_point_w2s.Y, color, thickness);
 

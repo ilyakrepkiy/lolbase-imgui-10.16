@@ -97,7 +97,7 @@ CObject* COrbWalker::GetNearestToMouseMinion() {
 			{
 				Vector objPos_w2s;
 				auto objPos = pObject->GetPos();
-				Functions.WorldToScreen(&objPos, &objPos_w2s);
+				Functions.WorldToScreen(Functions.pDevice, &objPos, &objPos_w2s);
 				if (calculate2dDistance(
 					objPos_w2s.X,
 					objPos_w2s.Y,

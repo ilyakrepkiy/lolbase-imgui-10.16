@@ -8,18 +8,6 @@
 #include "COrbWalker.h"
 #include <mutex>
 
-#include "imgui\imgui.h"
-#include "imgui\imgui_internal.h"
-#include "imgui\dx9\imgui_impl_dx9.h"
-#include "imgui\win32\imgui_impl_win32.h"
-
-#pragma comment(lib, "detours.lib")
-using namespace std;
-#define DO_ONCE(todo) do { \
-   static std::once_flag _flag ;\
-   std::call_once(_flag, todo); \
-} while (false)
-
 CObjectManager* ObjManager;
 CFunctions Functions;
 COrbWalker orbWalker;
@@ -41,25 +29,18 @@ bool g_interface = false;
 bool g_draw_spells = true;
 
 IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-LRESULT WINAPI WndProc(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param);
-
-typedef HRESULT(WINAPI* Prototype_Present)(LPDIRECT3DDEVICE9, CONST RECT*, CONST RECT*, HWND, CONST RGNDATA*);
-typedef HRESULT(WINAPI* Prototype_Reset)(LPDIRECT3DDEVICE9, D3DPRESENT_PARAMETERS*);
-typedef int(__thiscall* fnCheckReturnAddr)(int a1, int a2, int a3, DWORD* a4, char a5, int a6, int a7, int a8, int a9, DWORD* returnaddr);
-fnCheckReturnAddr CheckReturnAddr;
-Prototype_Reset Original_Reset;
-Prototype_Present Original_Present;
 
 HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT * pSrcRect, CONST RECT * pDestRect, HWND hDestWindow, CONST RGNDATA * pDirtyRegion)
 {
-	myDevice = Device;
-	DO_ONCE([&]()
-		{
-			render.init(Device);
-		});
+	Functions.pDevice = Device;
+	static bool RenderInit = false;
+	if (!RenderInit) {
+		render.init(Device);
+		RenderInit = true;
+	}
 
 	ImGui::CreateContext();
-	render.begin_draw();//begin for draw rende.drawline.... and etc
+	render.begin_draw();
 
 	if (ImGui_ImplWin32_Init(g_hwnd)){
 		if (ImGui_ImplDX9_Init(Device)){
@@ -102,8 +83,8 @@ HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT * pSrcRect, C
 				auto objCaster = Engine::GetObjectByID(obj->GetMissileSourceIndex());
 				if (objCaster->IsHero() && me->IsEnemyTo(objCaster) && !stristr(obj->GetName(), "basic")) {
 					Vector start_pos_w2s, end_pos_w2s;
-					Functions.WorldToScreen(&obj->GetMissileStartPos(), &start_pos_w2s);
-					Functions.WorldToScreen(&obj->GetMissileEndPos(), &end_pos_w2s);
+					Functions.WorldToScreen(Device, &obj->GetMissileStartPos(), &start_pos_w2s);
+					Functions.WorldToScreen(Device, &obj->GetMissileEndPos(), &end_pos_w2s);
 					render.draw_line(start_pos_w2s.X, start_pos_w2s.Y, end_pos_w2s.X, end_pos_w2s.Y, ImColor(255, 255, 255), 5);
 				}
 			}
@@ -124,10 +105,10 @@ HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT * pSrcRect, C
 	if (g_w2s_line == true) {
 		Vector me_pos = me->GetPos();
 		Vector mepos_w2s;
-		Functions.WorldToScreen(&me_pos, &mepos_w2s);
+		Functions.WorldToScreen(Device, &me_pos, &mepos_w2s);
 		Vector mouse_pos_w2s;
 		Vector mouse_pos = Engine::GetMouseWorldPosition();
-		Functions.WorldToScreen(&mouse_pos, &mouse_pos_w2s);
+		Functions.WorldToScreen(Device, &mouse_pos, &mouse_pos_w2s);
 		render.draw_line(mepos_w2s.X, mepos_w2s.Y, mouse_pos_w2s.X, mouse_pos_w2s.Y, ImColor(15, 150, 40, 255), 5.0f);
 	}
 
@@ -161,7 +142,7 @@ HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT * pSrcRect, C
 			{
 				Vector obj_pos = obj->GetPos();
 				Vector objpos_w2s;
-				Functions.WorldToScreen(&obj_pos, &objpos_w2s);
+				Functions.WorldToScreen(Device, &obj_pos, &objpos_w2s);
 				render.draw_text(objpos_w2s.X, objpos_w2s.Y + 15, obj->GetName(), true, ImColor(255, 0, 0, 255));
 				render.draw_text(objpos_w2s.X, objpos_w2s.Y + 30, obj->GetChampionName(), true, ImColor(255, 0, 0, 255));
 
@@ -176,14 +157,14 @@ HRESULT WINAPI Hooked_Present(LPDIRECT3DDEVICE9 Device, CONST RECT * pSrcRect, C
 	}
 
 	render.end_draw();
-	return Original_Present(Device, pSrcRect, pDestRect, hDestWindow, pDirtyRegion);
+	return Functions.Original_Present(Device, pSrcRect, pDestRect, hDestWindow, pDirtyRegion);
 }
 
 HRESULT WINAPI Hooked_Reset(LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentationParameters)
 {
 	ImGui_ImplDX9_InvalidateDeviceObjects();
 
-	HRESULT result = Original_Reset(pDevice, pPresentationParameters);
+	HRESULT result = Functions.Original_Reset(pDevice, pPresentationParameters);
 
 	if (result >= 0)
 		ImGui_ImplDX9_CreateDeviceObjects();
@@ -191,17 +172,13 @@ HRESULT WINAPI Hooked_Reset(LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pP
 	return result;
 }
 
-int __fastcall CheckReturnAddr_Hook(int a1, int a2, int a3, DWORD* a4, char a5, int a6, int a7, int a8, int a9, DWORD* returnaddr) {
-	returnaddr = (DWORD*)oRetAddr;
-	return CheckReturnAddr(a1, a2, a3, a4, a5, a6, a7, a8, a9, returnaddr);
-}
-
-DWORD FindDevice(DWORD Len)
+DWORD GetDeviceAddress(int VTableIndex)
 {
-	DWORD dwObjBase = 0;
+	PDWORD VTable = nullptr;
+	DWORD dwObjBase = NULL;
 
 	dwObjBase = (DWORD)LoadLibrary("d3d9.dll");
-	while (dwObjBase++ < dwObjBase + Len)
+	while (dwObjBase++ < dwObjBase + 0x128000)
 	{
 		if ((*(WORD*)(dwObjBase + 0x00)) == 0x06C7
 			&& (*(WORD*)(dwObjBase + 0x06)) == 0x8689
@@ -210,14 +187,27 @@ DWORD FindDevice(DWORD Len)
 			dwObjBase += 2; break;
 		}
 	}
-	return(dwObjBase);
+
+	*(DWORD*)&VTable = *(DWORD*)dwObjBase;
+	return VTable[VTableIndex];
 }
 
-DWORD GetDeviceAddress(int VTableIndex)
+LRESULT WINAPI WndProc(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param)
 {
-	PDWORD VTable;
-	*(DWORD*)&VTable = *(DWORD*)FindDevice(0x128000);
-	return VTable[VTableIndex];
+	switch (u_msg)
+	{
+	case WM_KEYDOWN:
+		if (w_param == VK_END)
+			g_menu_opened = !g_menu_opened;
+		break;
+	default:
+		break;
+	}
+
+	if (g_menu_opened && ImGui_ImplWin32_WndProcHandler(hwnd, u_msg, w_param, l_param))
+		return true;
+
+	return CallWindowProcA(g_wndproc, hwnd, u_msg, w_param, l_param);
 }
 
 void __stdcall Start() {
@@ -241,14 +231,12 @@ void __stdcall Start() {
 	Functions.IsTroyEnt = (Typedefs::fnIsTroyEnt)(baseAddr + oIsTroy);
 
 	Functions.IssueOrder = (Typedefs::fnIssueOrder)((DWORD)GetModuleHandle(NULL) + oIssueOrder);
-	Functions.WorldToScreen = (Typedefs::WorldToScreen)(baseAddr + (DWORD)oWorldToScreen);
 
 	Functions.GetAttackCastDelay = (Typedefs::fnGetAttackCastDelay)((DWORD)GetModuleHandle(NULL) + oGetAttackCastDelay);
 	Functions.GetAttackDelay = (Typedefs::fnGetAttackDelay)((DWORD)GetModuleHandle(NULL) + oGetAttackDelay);
 
-	Original_Present = (Prototype_Present)DetourFunction((PBYTE)GetDeviceAddress(17), (PBYTE)Hooked_Present);
-	Original_Reset = (Prototype_Reset)DetourFunction((PBYTE)GetDeviceAddress(16), (PBYTE)Hooked_Reset);
-	CheckReturnAddr = (fnCheckReturnAddr)DetourFunction((PBYTE)baseAddr+oReturnAddressCheck, (PBYTE)CheckReturnAddr_Hook);
+	Functions.Original_Present = (Typedefs::Prototype_Present)DetourFunction((PBYTE)GetDeviceAddress(17), (PBYTE)Hooked_Present);
+	Functions.Original_Reset = (Typedefs::Prototype_Reset)DetourFunction((PBYTE)GetDeviceAddress(16), (PBYTE)Hooked_Reset);
 
 	while (!g_unload)
 		Sleep(1);
@@ -257,30 +245,12 @@ void __stdcall Start() {
 	ImGui_ImplDX9_Shutdown();
 
 	g_wndproc = WNDPROC(SetWindowLongA(g_hwnd, GWL_WNDPROC, LONG_PTR(g_wndproc)));
-	DetourRemove((PBYTE)Original_Reset, (PBYTE)Hooked_Reset);
-	DetourRemove((PBYTE)Original_Present, (PBYTE)Hooked_Present);
+	DetourRemove((PBYTE)Functions.Original_Reset, (PBYTE)Hooked_Reset);
+	DetourRemove((PBYTE)Functions.Original_Present, (PBYTE)Hooked_Present);
 
 	ImGui::DestroyContext(ImGui::GetCurrentContext());
 
 	FreeLibraryAndExitThread(g_module, 0);
-}
-
-LRESULT WINAPI WndProc(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param)
-{
-	switch (u_msg)
-	{
-	case WM_KEYDOWN:
-		if (w_param == VK_END)
-			g_menu_opened = !g_menu_opened;
-		break;
-	default:
-		break;
-	}
-
-	if (g_menu_opened && ImGui_ImplWin32_WndProcHandler(hwnd, u_msg, w_param, l_param))
-		return true;
-
-	return CallWindowProcA(g_wndproc, hwnd, u_msg, w_param, l_param);
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
