@@ -62,7 +62,6 @@ public:
 			push 3
 			push SpoofAddress
 			jmp IssueOrderAddr
-			sub retnHere, 22
 			retnHere :
 		}
 	}
@@ -83,7 +82,6 @@ public:
 			push 2
 			push SpoofAddress
 			jmp IssueOrderAddr
-			sub retnHere, 22
 			retnHere :
 		}
 	}
