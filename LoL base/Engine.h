@@ -4,6 +4,9 @@
 #include "Vector.h"
 #include "Hooks.h"
 #include "CObjectManager.h"
+#include <ctime>
+#include <chrono>
+#include <thread>
 
 
 #define me Engine::GetLocalObject()
@@ -23,11 +26,9 @@ public:
 
 		return Vector{ X, Y, Z };
 	}
-
 	static float GetGameTime() {
 		return *(float*)(baseAddr + oGameTime);
 	}
-
 	static CObject* GetLocalObject() {
 		auto retaddr = *(DWORD*)(baseAddr + oLocalPlayer);
 		if (retaddr == NULL)
@@ -35,31 +36,55 @@ public:
 
 		return (CObject*)retaddr;
 	}
-	static void PrintChat(const char* Message) {
-		typedef void(__thiscall* tPrintChat)(DWORD ChatClient, const char* Message, int Color);
-		tPrintChat fnPrintChat = (tPrintChat)(baseAddr + oPrintChat);
-		fnPrintChat(*(DWORD*)(baseAddr + oChatClientPtr), Message, 1);
-	}
-
 	static CObject* Engine::GetObjectByID(int ID)
 	{
-		if (ObjManager != NULL && ID >= 0 && ID <= 10000) {
-			//return ObjManager->objectArray[ID];
+		if (ObjManager && ID >= 0 && ID <= ObjManager->GetHighestIndex()) {
+			return ObjManager->GetObjByIndex(ID);
+		}
+
+		return nullptr;
+	}
+	static void AttackTo(Vector* pos, CObject* Target) {
+		DWORD SpoofAddress = (DWORD)GetModuleHandle(NULL) + oRetAddr; //retn instruction
+		DWORD IssueOrderAddr = (DWORD)GetModuleHandle(NULL) + oIssueOrder;//IssueOrder
+		void* LocalPlayer = Engine::GetLocalObject();
+		CObject* AttackTo = Target;
+
+		__asm
+		{
+			push retnHere
+			mov ecx, LocalPlayer
+			push 0
+			push 0
+			push 0
+			push AttackTo
+			push pos
+			push 3
+			push SpoofAddress
+			jmp IssueOrderAddr
+			retnHere :
 		}
 	}
+	static void IssueMove(Vector* pos) {
+		DWORD SpoofAddress = (DWORD)GetModuleHandle(NULL) + oRetAddr; //retn instruction
+		DWORD IssueOrderAddr = (DWORD)GetModuleHandle(NULL) + oIssueOrder;//IssueOrder
+		void* LocalPlayer = Engine::GetLocalObject();
 
-	static void MoveTo(Vector* pos) {
-		Functions.IssueOrder(GetLocalObject(), 2, pos, NULL, false, false, false);
-
+		__asm
+		{
+			push retnHere
+			mov ecx, LocalPlayer
+			push 0
+			push 0
+			push 0
+			push 0
+			push pos
+			push 2
+			push SpoofAddress
+			jmp IssueOrderAddr
+			retnHere :
+		}
 	}
-		
-
-
-	static void AttackTarget(CObject* obj) {
-		Functions.IssueOrder(GetLocalObject(), 3, &obj->GetPos(), obj, true, false, false);
-	}
-
-
 	static void Engine::CastSpellSelf(int SlotID) {
 		if (me->IsAlive()) {
 			auto spellbook = (DWORD)me + oObjSpellBook;
@@ -67,7 +92,6 @@ public:
 			Functions.CastSpell(spellbook, spellslot, SlotID, &me->GetPos(), &me->GetPos(), 0);
 		}
 	}
-
 	static void Engine::CastSpellPos(int SlotID, Vector pos) {
 		auto spellbook = (DWORD)me + oObjSpellBook;
 		auto spellslot = me->GetSpellBook()->GetSpellSlotByID(SlotID);
@@ -75,7 +99,6 @@ public:
 
 		Functions.CastSpell(spellbook, spellslot, SlotID, targetpos, new Vector(0, 0, 0), 0x0);
 	}
-
 	static void Engine::CastSpellPos(int SlotID, float x, float y, float z, CObject* obj) {
 		auto spellbook = (DWORD)me + oObjSpellBook;
 		auto spellslot = me->GetSpellBook()->GetSpellSlotByID(SlotID);
@@ -83,22 +106,18 @@ public:
 		Functions.CastSpell(spellbook, spellslot, SlotID, &obj->GetPos(), &me->GetPos(), obj->GetNetworkID());
 		delete pos;
 	}
-
 	static void Engine::CastSpellTargetted(int SlotID, CObject* obj) {
 		auto spellbook = (DWORD)me + oObjSpellBook;
 		auto spellslot = me->GetSpellBook()->GetSpellSlotByID(SlotID);
 
 		Functions.CastSpell(spellbook, spellslot, SlotID, &obj->GetPos(), &me->GetPos(), obj->GetNetworkID());
 	}
-
 	static float Engine::getCD(int slot, CObject* obj) {
 
 		//Console.print("CD : %f", obj->GetSpellBook()->GetSpellSlotByID(slot)->GetCD() - Engine::GetGameTime());
 		return obj->GetSpellBook()->GetSpellSlotByID(slot)->GetCD();
 	}
-
 	static bool Engine::IsReady(int slot, CObject* obj) {
-		//Console.print("LEVEL : %i", obj->GetSpellBook()->GetSpellSlotByID(slot)->GetLevel());
 		return obj->GetSpellBook()->GetSpellSlotByID(slot)->GetLevel() >= 1 && getCD(slot, obj) == 0.0f;
 	}
 };

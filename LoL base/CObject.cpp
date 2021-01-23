@@ -7,23 +7,37 @@ bool CObject::IsAlive() {
 }
 
 bool CObject::IsMinion() {
-	return Functions.IsMinion(this);
+	return this->CompareObjectTypeFlags(ObjectTypeFlags::Minion);
+}
+
+float CObject::GetDistanceToMe() {
+	return this->GetPos().DistTo(Engine::GetLocalObject()->GetPos());
 }
 
 bool CObject::IsTurret() {
-	return Functions.IsTurret(this);
+	return this->CompareObjectTypeFlags(ObjectTypeFlags::Turret);
 }
 
 bool CObject::IsHero() {
-	return CompareObjectTypeFlags((int)ObjectTypeFlags::Hero);
+	return CompareObjectTypeFlags(ObjectTypeFlags::Hero);
 }
 
 bool CObject::IsMissile() {
-	return Functions.IsMissile(this);
+	return this->CompareObjectTypeFlags(ObjectTypeFlags::Missile);
 }
 
 bool CObject::IsTargetable() {
 	return Functions.IsTargetable(this);
+}
+
+float CObject::GetAttackDelay()
+{
+	return Functions.GetAttackDelay(this);
+}
+
+float CObject::GetAttackCastDelay()
+{
+	return Functions.GetAttackCastDelay(this);
 }
 
 bool CObject::IsNexus() {
@@ -36,4 +50,24 @@ bool CObject::IsInhibitor() {
 
 bool CObject::IsTroyEnt() {
 	return Functions.IsTroyEnt(this);
+}
+
+Vector CObject::GetMissileStartPos() {
+	Vector startPos = *(Vector*)((DWORD)this + oMissileStartPos);
+	startPos.Y += 100;
+	return startPos;
+}
+
+Vector CObject::GetMissileEndPos() {
+	Vector spellEndPos = *(Vector*)((DWORD)this + oMissileEndPos);
+	spellEndPos.Y += 100;
+	return spellEndPos;
+}
+
+short CObject::GetMissileSourceIndex() {
+	return *(short*)((DWORD)this + oMissileSourceIndex);
+}
+
+SpellInfo CObject::GetMissileSpellInfo() {
+	return *(SpellInfo*)((DWORD)this + oMissileSpellInfo);
 }
